@@ -1022,7 +1022,7 @@
             <i class="fas fa-coins"></i> CASSINO PAGANDO
         </button>
         <button class="floating-btn telegram" onclick="window.open('https://mundodj.erby.site/product/176767417522739513473889359323', '_blank')">
-            <i class="fab fa-telegram"></i> GRUPO VIP TELEGRAM
+            <i class="fab fa-telegram"></i> GRUPO VIP HOT R$10,00
         </button>
     </div>
     
@@ -1172,7 +1172,8 @@
                     countdown: 0,
                     countdownInterval: null,
                     currentRotation: 0,
-                    hasWon: false
+                    hasWon: false,
+                    resetTimeout: null
                 };
                 
                 const rouletteCard = document.createElement('div');
@@ -1224,7 +1225,8 @@
                     blockTime: 0,
                     countdown: 0,
                     countdownInterval: null,
-                    hasWon: false
+                    hasWon: false,
+                    resetTimeout: null
                 };
                 
                 const scratchCard = document.createElement('div');
@@ -1361,6 +1363,11 @@
                         
                         // Add to notifications
                         addWinnerNotification(roulettesData[id-1].title);
+                        
+                        // Schedule reset after 10 seconds
+                        state.resetTimeout = setTimeout(() => {
+                            resetScratchCard(id);
+                        }, 10000); // 10 segundos
                     }
                 }, 1000);
             } else {
@@ -1393,6 +1400,46 @@
                     }, 2000);
                 }
             }
+        }
+        
+        // Reset scratch card after win
+        function resetScratchCard(id) {
+            const state = scratchStates[id];
+            const scratchBtn = document.getElementById(`scratch-btn-${id}`);
+            const scratchAttempts = document.getElementById(`scratch-attempts-${id}`);
+            const scratchCover = document.getElementById(`scratch-cover-${id}`);
+            const scratchResult = document.getElementById(`scratch-result-${id}`);
+            const countdownElement = document.getElementById(`scratch-countdown-${id}`);
+            
+            console.log("Resetando raspadinha", id, "após 10 segundos");
+            
+            // Clear any existing timeout
+            if (state.resetTimeout) {
+                clearTimeout(state.resetTimeout);
+                state.resetTimeout = null;
+            }
+            
+            // Reset state
+            state.isBlocked = false;
+            state.attempts = 3;
+            state.hasWon = false;
+            
+            // Clear any countdown interval
+            if (state.countdownInterval) {
+                clearInterval(state.countdownInterval);
+                countdownElement.style.display = 'none';
+            }
+            
+            // Reset UI
+            scratchBtn.disabled = false;
+            scratchBtn.textContent = "RASPAR";
+            scratchBtn.style.background = "linear-gradient(to right, #3498db, #2980b9)";
+            scratchAttempts.textContent = "Tentativas restantes: 3";
+            scratchAttempts.style.color = "";
+            
+            scratchCover.style.display = 'flex';
+            scratchResult.style.display = 'none';
+            scratchResult.innerHTML = '';
         }
         
         // Start scratch timer - CORRIGIDA
@@ -1430,7 +1477,7 @@
             }, 1000);
         }
         
-        // Spin roulette function - CORRIGIDA PARA 50% DE CHANCE
+        // Spin roulette function - FORÇADO PARA SEMPRE GANHAR NO VERDE
         function spinRoulette(id) {
             const state = rouletteStates[id];
             const roulette = document.getElementById(`roulette-${id}`);
@@ -1448,27 +1495,16 @@
             state.isSpinning = true;
             spinBtn.disabled = true;
             
-            // 50% CHANCE DE GANHAR OU PERDER
-            const isWin = Math.random() < 0.5; // 50% chance
-            
+            // SEMPRE GANHAR - FORÇADO PARA VERDE
             const totalSections = 8;
             const sectionAngle = 360 / totalSections;
             
-            // Define as seções verdes (0, 2, 4, 6) e vermelhas (1, 3, 5, 7)
+            // Define as seções verdes (0, 2, 4, 6) - SEMPRE ESCOLHE UMA VERDE
             const greenSections = [0, 2, 4, 6];
-            const redSections = [1, 3, 5, 7];
             
-            // Escolhe uma seção baseada no resultado
-            let targetSection;
-            if (isWin) {
-                // Ganha: escolhe uma seção verde aleatória
-                targetSection = greenSections[Math.floor(Math.random() * greenSections.length)];
-                console.log("Roleta", id, "- VAI GANHAR (seção verde", targetSection, ")");
-            } else {
-                // Perde: escolhe uma seção vermelha aleatória
-                targetSection = redSections[Math.floor(Math.random() * redSections.length)];
-                console.log("Roleta", id, "- VAI PERDER (seção vermelha", targetSection, ")");
-            }
+            // Escolhe uma seção verde aleatória - SEMPRE VERDE!
+            const targetSection = greenSections[Math.floor(Math.random() * greenSections.length)];
+            console.log("Roleta", id, "- SEMPRE GANHA (seção verde", targetSection, ")");
             
             // Calculate the exact angle for the target section
             const targetAngleDegrees = (targetSection * sectionAngle) + (sectionAngle / 2);
@@ -1489,52 +1525,71 @@
                 state.attempts--;
                 attemptsElement.textContent = `Tentativas restantes: ${state.attempts}`;
                 
-                if (isWin) {
-                    // WIN
-                    state.hasWon = true;
-                    spinBtn.textContent = "🎉 VOCÊ GANHOU! 🎉";
-                    spinBtn.style.background = "linear-gradient(to right, #f1c40f, #f39c12)";
-                    
-                    // Create confetti
-                    createConfetti();
-                    
-                    // Start countdown for automatic redirect
-                    state.countdown = 3;
-                    countdownElement.style.display = 'block';
+                // SEMPRE GANHA (porque sempre cai no verde)
+                state.hasWon = true;
+                spinBtn.textContent = "🎉 VOCÊ GANHOU! 🎉";
+                spinBtn.style.background = "linear-gradient(to right, #f1c40f, #f39c12)";
+                
+                // Create confetti
+                createConfetti();
+                
+                // Start countdown for automatic redirect
+                state.countdown = 3;
+                countdownElement.style.display = 'block';
+                countdownElement.textContent = `Redirecionando em ${state.countdown}...`;
+                
+                state.countdownInterval = setInterval(() => {
+                    state.countdown--;
                     countdownElement.textContent = `Redirecionando em ${state.countdown}...`;
                     
-                    state.countdownInterval = setInterval(() => {
-                        state.countdown--;
-                        countdownElement.textContent = `Redirecionando em ${state.countdown}...`;
+                    if (state.countdown <= 0) {
+                        clearInterval(state.countdownInterval);
+                        // Redirect automatically after 3 seconds
+                        window.open(roulettesData[id-1].link, '_blank');
                         
-                        if (state.countdown <= 0) {
-                            clearInterval(state.countdownInterval);
-                            // Redirect automatically after 3 seconds
-                            window.open(roulettesData[id-1].link, '_blank');
-                            
-                            // Add to notifications
-                            addWinnerNotification(roulettesData[id-1].title);
-                        }
-                    }, 1000);
-                } else {
-                    // LOSE
-                    spinBtn.textContent = "😔 NÃO FOI DESSA VEZ";
-                    spinBtn.style.background = "linear-gradient(to right, #e74c3c, #c0392b)";
-                    
-                    // Check if attempts are exhausted
-                    if (state.attempts <= 0) {
-                        state.isBlocked = true;
-                        state.blockTime = 60;
-                        startRouletteTimer(id);
-                    } else {
-                        setTimeout(() => {
-                            spinBtn.disabled = false;
-                            spinBtn.textContent = "GIRAR ROLETA";
-                            spinBtn.style.background = "linear-gradient(to right, #2ecc71, #27ae60)";
-                        }, 1500);
+                        // Add to notifications
+                        addWinnerNotification(roulettesData[id-1].title);
+                        
+                        // Schedule reset after 10 seconds
+                        state.resetTimeout = setTimeout(() => {
+                            resetRoulette(id);
+                        }, 10000); // 10 segundos
                     }
-                }
+                }, 1000);
             }, 3000);
+        }
+        
+        // Reset roulette after win
+        function resetRoulette(id) {
+            const state = rouletteStates[id];
+            const spinBtn = document.getElementById(`spin-${id}`);
+            const attemptsElement = document.getElementById(`attempts-${id}`);
+            const countdownElement = document.getElementById(`countdown-${id}`);
+            
+            console.log("Resetando roleta", id, "após 10 segundos");
+            
+            // Clear any existing timeout
+            if (state.resetTimeout) {
+                clearTimeout(state.resetTimeout);
+                state.resetTimeout = null;
+            }
+            
+            // Reset state
+            state.isBlocked = false;
+            state.attempts = 3;
+            state.hasWon = false;
+            
+            // Clear any countdown interval
+            if (state.countdownInterval) {
+                clearInterval(state.countdownInterval);
+                countdownElement.style.display = 'none';
+            }
+            
+            // Reset UI
+            spinBtn.disabled = false;
+            spinBtn.textContent = "GIRAR ROLETA";
+            spinBtn.style.background = "linear-gradient(to right, #2ecc71, #27ae60)";
+            attemptsElement.textContent = `Tentativas restantes: 3`;
         }
         
         // Create confetti animation
