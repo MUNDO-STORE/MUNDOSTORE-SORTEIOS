@@ -276,7 +276,6 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            transition: transform 3s cubic-bezier(0.17, 0.67, 0.21, 0.99);
             background: #333;
         }
         
@@ -490,7 +489,7 @@
             margin-top: 5px;
         }
         
-        /* Scratch Cards - CORRIGIDO */
+        /* Scratch Cards */
         .scratch-area {
             width: 100%;
             height: 150px;
@@ -640,7 +639,7 @@
             display: none;
         }
         
-        /* Floating Buttons - CORRIGIDO (menores e mais profissionais) */
+        /* Floating Buttons - COM ANIMAÇÃO DE OCULTAR */
         .floating-buttons {
             position: fixed;
             bottom: 20px;
@@ -649,12 +648,14 @@
             flex-direction: column;
             gap: 12px;
             z-index: 1000;
-            animation: floatUp 2s infinite alternate;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
         }
         
-        @keyframes floatUp {
-            from { transform: translateY(0); }
-            to { transform: translateY(-10px); }
+        .floating-buttons.hidden {
+            opacity: 0;
+            visibility: hidden;
         }
         
         .floating-btn {
@@ -698,12 +699,10 @@
         
         .floating-btn.cassino {
             background: linear-gradient(to right, #e74c3c, #c0392b);
-            animation-delay: 0.5s;
         }
         
         .floating-btn.telegram {
             background: linear-gradient(to right, #0088cc, #006699);
-            animation-delay: 1s;
         }
         
         .floating-btn:hover {
@@ -711,11 +710,11 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
         }
         
-        /* Notifications */
+        /* Notifications - NO LADO ESQUERDO */
         .notifications-container {
             position: fixed;
             top: 20px;
-            right: 20px;
+            left: 20px;
             width: 300px;
             z-index: 1000;
             display: flex;
@@ -732,17 +731,17 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            animation: slideIn 0.5s ease, slideOut 0.5s ease 7.5s forwards;
+            animation: slideInLeft 0.5s ease, slideOutLeft 0.5s ease 7.5s forwards;
             transition: transform 0.3s ease;
         }
         
         .notification:hover {
-            transform: translateX(-5px);
+            transform: translateX(5px);
         }
         
-        @keyframes slideIn {
+        @keyframes slideInLeft {
             from {
-                transform: translateX(100%);
+                transform: translateX(-100%);
                 opacity: 0;
             }
             to {
@@ -751,13 +750,13 @@
             }
         }
         
-        @keyframes slideOut {
+        @keyframes slideOutLeft {
             from {
                 transform: translateX(0);
                 opacity: 1;
             }
             to {
-                transform: translateX(100%);
+                transform: translateX(-100%);
                 opacity: 0;
             }
         }
@@ -924,8 +923,8 @@
             .notifications-container {
                 width: calc(100% - 40px);
                 top: 10px;
-                right: 10px;
                 left: 10px;
+                right: 10px;
             }
             
             .section-title {
@@ -1036,7 +1035,7 @@
     </main>
     
     <!-- Floating Buttons -->
-    <div class="floating-buttons">
+    <div class="floating-buttons" id="floatingButtons">
         <button class="floating-btn cassino" onclick="window.open('https://bkbet84.com/?id=972228965', '_blank')">
             <i class="fas fa-coins"></i> CASSINO PAGANDO
         </button>
@@ -1045,7 +1044,7 @@
         </button>
     </div>
     
-    <!-- Notifications Container -->
+    <!-- Notifications Container (NO LADO ESQUERDO) -->
     <div class="notifications-container" id="notificationsContainer">
         <!-- Notifications will appear here -->
     </div>
@@ -1138,6 +1137,9 @@
         const rouletteStates = {};
         const scratchStates = {};
         
+        // Controlador de visibilidade dos botões flutuantes
+        let floatingButtonsVisible = true;
+        
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
             createAnimatedBackground();
@@ -1148,7 +1150,24 @@
             
             // Show notifications periodically
             setInterval(showRandomNotification, 15000);
+            
+            // Controlar visibilidade dos botões flutuantes
+            startFloatingButtonsToggle();
         });
+        
+        // Controlar visibilidade dos botões flutuantes a cada 10 segundos
+        function startFloatingButtonsToggle() {
+            setInterval(() => {
+                const floatingButtons = document.getElementById('floatingButtons');
+                floatingButtonsVisible = !floatingButtonsVisible;
+                
+                if (floatingButtonsVisible) {
+                    floatingButtons.classList.remove('hidden');
+                } else {
+                    floatingButtons.classList.add('hidden');
+                }
+            }, 10000); // 10 segundos
+        }
         
         // Create animated background particles
         function createAnimatedBackground() {
@@ -1192,7 +1211,8 @@
                     countdownInterval: null,
                     currentRotation: 0,
                     hasWon: false,
-                    resetTimeout: null
+                    resetTimeout: null,
+                    spinCount: 0 // Contador de giros para aumentar o tempo
                 };
                 
                 const rouletteCard = document.createElement('div');
@@ -1232,7 +1252,7 @@
             });
         }
         
-        // Create scratch cards - COM TEXTO ATUALIZADO
+        // Create scratch cards
         function createScratchCards() {
             const container = document.getElementById('scratchContainer');
             
@@ -1251,7 +1271,6 @@
                 const scratchCard = document.createElement('div');
                 scratchCard.className = 'scratch-card';
                 
-                // Usar description direto do objeto roulettesData
                 const description = roulette.description.replace(/<br>/g, '\n');
                 
                 scratchCard.innerHTML = `
@@ -1280,7 +1299,202 @@
             });
         }
         
-        // Scratch card function - TOTALMENTE CORRIGIDA
+        // Spin roulette function - COM ANIMAÇÃO PROFISSIONAL
+        function spinRoulette(id) {
+            const state = rouletteStates[id];
+            const roulette = document.getElementById(`roulette-${id}`);
+            const spinBtn = document.getElementById(`spin-${id}`);
+            const attemptsElement = document.getElementById(`attempts-${id}`);
+            const timerElement = document.getElementById(`timer-${id}`);
+            const countdownElement = document.getElementById(`countdown-${id}`);
+            
+            // Check if can spin
+            if (state.isSpinning || state.isBlocked || state.attempts <= 0 || state.hasWon) {
+                return;
+            }
+            
+            // Start spinning
+            state.isSpinning = true;
+            state.spinCount++;
+            spinBtn.disabled = true;
+            
+            // Definir se vai ganhar (verde) ou perder (vermelho) - 50% chance para cada
+            const isWin = Math.random() < 0.5; // 50% chance de ganhar (verde)
+            
+            // Definir as seções verdes (0, 2, 4, 6) e vermelhas (1, 3, 5, 7)
+            const greenSections = [0, 2, 4, 6];
+            const redSections = [1, 3, 5, 7];
+            
+            // Escolher seção baseada no resultado
+            let targetSection;
+            if (isWin) {
+                // GANHOU - escolher uma seção verde
+                targetSection = greenSections[Math.floor(Math.random() * greenSections.length)];
+                console.log(`Roleta ${id} - GANHOU! Parou na seção verde ${targetSection}`);
+            } else {
+                // PERDEU - escolher uma seção vermelha
+                targetSection = redSections[Math.floor(Math.random() * redSections.length)];
+                console.log(`Roleta ${id} - PERDEU! Parou na seção vermelha ${targetSection}`);
+            }
+            
+            // Parâmetros da animação
+            const totalSections = 8;
+            const sectionAngle = 360 / totalSections;
+            
+            // Calcular o ângulo exato para a seção alvo
+            const targetAngleDegrees = (targetSection * sectionAngle) + (sectionAngle / 2);
+            
+            // Aumentar o tempo de rotação conforme o número de giros
+            const baseDuration = 5000; // 5 segundos base
+            const additionalDuration = state.spinCount * 500; // +500ms a cada giro
+            const totalDuration = baseDuration + additionalDuration;
+            
+            // Calcular rotação total necessária (múltiplas voltas + ângulo alvo)
+            const fullRotations = 5 + Math.floor(state.spinCount / 2); // Mais voltas a cada 2 giros
+            const totalRotation = state.currentRotation + (360 * fullRotations) + targetAngleDegrees;
+            
+            // Aplicar animação suave de rotação com easing personalizado
+            roulette.style.transition = `transform ${totalDuration}ms cubic-bezier(0.2, 0.8, 0.3, 1)`;
+            roulette.style.transform = `rotate(${totalRotation}deg)`;
+            
+            // Atualizar rotação atual (módulo 360 para manter gerenciável)
+            state.currentRotation = totalRotation % 360;
+            
+            // Após a rotação completar
+            setTimeout(() => {
+                state.isSpinning = false;
+                state.attempts--;
+                attemptsElement.textContent = `Tentativas restantes: ${state.attempts}`;
+                
+                if (isWin) {
+                    // GANHOU
+                    state.hasWon = true;
+                    spinBtn.textContent = "🎉 VOCÊ GANHOU! 🎉";
+                    spinBtn.style.background = "linear-gradient(to right, #f1c40f, #f39c12)";
+                    
+                    // Criar confetti
+                    createConfetti();
+                    
+                    // Iniciar contagem regressiva para redirecionamento automático
+                    state.countdown = 3;
+                    countdownElement.style.display = 'block';
+                    countdownElement.textContent = `Redirecionando em ${state.countdown}...`;
+                    
+                    state.countdownInterval = setInterval(() => {
+                        state.countdown--;
+                        countdownElement.textContent = `Redirecionando em ${state.countdown}...`;
+                        
+                        if (state.countdown <= 0) {
+                            clearInterval(state.countdownInterval);
+                            // Redirecionar automaticamente após 3 segundos
+                            window.open(roulettesData[id-1].link, '_blank');
+                            
+                            // Adicionar às notificações
+                            addWinnerNotification(roulettesData[id-1].title);
+                            
+                            // Agendar reset após 10 segundos
+                            state.resetTimeout = setTimeout(() => {
+                                resetRoulette(id);
+                            }, 10000);
+                        }
+                    }, 1000);
+                } else {
+                    // PERDEU
+                    spinBtn.disabled = false;
+                    spinBtn.textContent = "GIRAR ROLETA";
+                    
+                    // Verificar se as tentativas se esgotaram
+                    if (state.attempts <= 0) {
+                        attemptsElement.innerHTML = "Tentativas esgotadas! Bloqueado por 1 minuto.";
+                        attemptsElement.style.color = "#e74c3c";
+                        spinBtn.disabled = true;
+                        
+                        // Bloquear por 1 minuto
+                        state.isBlocked = true;
+                        state.blockTime = 60;
+                        
+                        startRouletteTimer(id);
+                    } else {
+                        attemptsElement.innerHTML = `Não foi desta vez! ${state.attempts} tentativa(s) restante(s).`;
+                        attemptsElement.style.color = "#e74c3c";
+                    }
+                }
+            }, totalDuration);
+        }
+        
+        // Reset roulette after win
+        function resetRoulette(id) {
+            const state = rouletteStates[id];
+            const spinBtn = document.getElementById(`spin-${id}`);
+            const attemptsElement = document.getElementById(`attempts-${id}`);
+            const countdownElement = document.getElementById(`countdown-${id}`);
+            
+            console.log("Resetando roleta", id, "após 10 segundos");
+            
+            // Clear any existing timeout
+            if (state.resetTimeout) {
+                clearTimeout(state.resetTimeout);
+                state.resetTimeout = null;
+            }
+            
+            // Reset state
+            state.isBlocked = false;
+            state.attempts = 3;
+            state.hasWon = false;
+            
+            // Clear any countdown interval
+            if (state.countdownInterval) {
+                clearInterval(state.countdownInterval);
+                countdownElement.style.display = 'none';
+            }
+            
+            // Reset UI
+            spinBtn.disabled = false;
+            spinBtn.textContent = "GIRAR ROLETA";
+            spinBtn.style.background = "linear-gradient(to right, #2ecc71, #27ae60)";
+            attemptsElement.textContent = `Tentativas restantes: 3`;
+            attemptsElement.style.color = "";
+        }
+        
+        // Start roulette timer
+        function startRouletteTimer(id) {
+            const state = rouletteStates[id];
+            const timerElement = document.getElementById(`timer-${id}`);
+            const spinBtn = document.getElementById(`spin-${id}`);
+            const attemptsElement = document.getElementById(`attempts-${id}`);
+            const countdownElement = document.getElementById(`countdown-${id}`);
+            
+            timerElement.style.display = "block";
+            
+            const timerInterval = setInterval(() => {
+                state.blockTime--;
+                timerElement.textContent = `Aguarde: ${state.blockTime}s`;
+                
+                if (state.blockTime <= 0) {
+                    clearInterval(timerInterval);
+                    timerElement.style.display = "none";
+                    
+                    // Reset roulette state but KEEP THE CURRENT ROTATION and spin count
+                    state.isBlocked = false;
+                    state.attempts = 3;
+                    state.hasWon = false;
+                    
+                    // Clear any countdown interval
+                    if (state.countdownInterval) {
+                        clearInterval(state.countdownInterval);
+                        countdownElement.style.display = 'none';
+                    }
+                    
+                    spinBtn.disabled = false;
+                    spinBtn.textContent = "GIRAR ROLETA";
+                    spinBtn.style.background = "linear-gradient(to right, #2ecc71, #27ae60)";
+                    attemptsElement.textContent = `Tentativas restantes: 3`;
+                    attemptsElement.style.color = "";
+                }
+            }, 1000);
+        }
+        
+        // Scratch card function
         function scratchCard(id) {
             const state = scratchStates[id];
             const scratchBtn = document.getElementById(`scratch-btn-${id}`);
@@ -1289,15 +1503,10 @@
             const scratchAttempts = document.getElementById(`scratch-attempts-${id}`);
             const countdownElement = document.getElementById(`scratch-countdown-${id}`);
             
-            console.log("Tentando raspar card", id, "estado:", state);
-            
             // Check if can scratch
             if (state.isBlocked || state.attempts <= 0 || state.hasWon) {
-                console.log("Não pode raspar:", {blocked: state.isBlocked, attempts: state.attempts, won: state.hasWon});
                 return;
             }
-            
-            console.log("Raspando card", id, "tentativa", 4 - state.attempts);
             
             // Esconde a capa
             scratchCover.style.display = 'none';
@@ -1316,7 +1525,6 @@
                 const winningSymbol = scratchSymbols[Math.floor(Math.random() * scratchSymbols.length)];
                 symbols = [winningSymbol, winningSymbol, winningSymbol];
                 state.hasWon = true;
-                console.log("GANHOU! Símbolos:", symbols);
             } else {
                 // LOSE: Generate 2 identical and 1 different symbol
                 const symbol1 = scratchSymbols[Math.floor(Math.random() * scratchSymbols.length)];
@@ -1338,7 +1546,6 @@
                 // Decrease attempts
                 state.attempts--;
                 scratchAttempts.textContent = `Tentativas restantes: ${state.attempts}`;
-                console.log("PERDEU! Símbolos:", symbols, "Tentativas restantes:", state.attempts);
             }
             
             // Display symbols
@@ -1386,7 +1593,7 @@
                         // Schedule reset after 10 seconds
                         state.resetTimeout = setTimeout(() => {
                             resetScratchCard(id);
-                        }, 10000); // 10 segundos
+                        }, 10000);
                     }
                 }, 1000);
             } else {
@@ -1430,8 +1637,6 @@
             const scratchResult = document.getElementById(`scratch-result-${id}`);
             const countdownElement = document.getElementById(`scratch-countdown-${id}`);
             
-            console.log("Resetando raspadinha", id, "após 10 segundos");
-            
             // Clear any existing timeout
             if (state.resetTimeout) {
                 clearTimeout(state.resetTimeout);
@@ -1461,7 +1666,7 @@
             scratchResult.innerHTML = '';
         }
         
-        // Start scratch timer - CORRIGIDA
+        // Start scratch timer
         function startScratchTimer(id) {
             const state = scratchStates[id];
             const timerElement = document.getElementById(`scratch-timer-${id}`);
@@ -1494,121 +1699,6 @@
                     scratchResult.innerHTML = '';
                 }
             }, 1000);
-        }
-        
-        // Spin roulette function - FORÇADO PARA SEMPRE GANHAR NO VERDE
-        function spinRoulette(id) {
-            const state = rouletteStates[id];
-            const roulette = document.getElementById(`roulette-${id}`);
-            const spinBtn = document.getElementById(`spin-${id}`);
-            const attemptsElement = document.getElementById(`attempts-${id}`);
-            const timerElement = document.getElementById(`timer-${id}`);
-            const countdownElement = document.getElementById(`countdown-${id}`);
-            
-            // Check if can spin
-            if (state.isSpinning || state.isBlocked || state.attempts <= 0 || state.hasWon) {
-                return;
-            }
-            
-            // Start spinning
-            state.isSpinning = true;
-            spinBtn.disabled = true;
-            
-            // SEMPRE GANHAR - FORÇADO PARA VERDE
-            const totalSections = 8;
-            const sectionAngle = 360 / totalSections;
-            
-            // Define as seções verdes (0, 2, 4, 6) - SEMPRE ESCOLHE UMA VERDE
-            const greenSections = [0, 2, 4, 6];
-            
-            // Escolhe uma seção verde aleatória - SEMPRE VERDE!
-            const targetSection = greenSections[Math.floor(Math.random() * greenSections.length)];
-            console.log("Roleta", id, "- SEMPRE GANHA (seção verde", targetSection, ")");
-            
-            // Calculate the exact angle for the target section
-            const targetAngleDegrees = (targetSection * sectionAngle) + (sectionAngle / 2);
-            
-            // Calculate total rotation needed
-            const fullRotations = 5;
-            const totalRotation = state.currentRotation + (360 * fullRotations) + targetAngleDegrees;
-            
-            // Apply spin starting from current rotation
-            roulette.style.transform = `rotate(${totalRotation}deg)`;
-            
-            // Update current rotation (modulo 360 to keep it manageable)
-            state.currentRotation = totalRotation % 360;
-            
-            // After spin completes
-            setTimeout(() => {
-                state.isSpinning = false;
-                state.attempts--;
-                attemptsElement.textContent = `Tentativas restantes: ${state.attempts}`;
-                
-                // SEMPRE GANHA (porque sempre cai no verde)
-                state.hasWon = true;
-                spinBtn.textContent = "🎉 VOCÊ GANHOU! 🎉";
-                spinBtn.style.background = "linear-gradient(to right, #f1c40f, #f39c12)";
-                
-                // Create confetti
-                createConfetti();
-                
-                // Start countdown for automatic redirect
-                state.countdown = 3;
-                countdownElement.style.display = 'block';
-                countdownElement.textContent = `Redirecionando em ${state.countdown}...`;
-                
-                state.countdownInterval = setInterval(() => {
-                    state.countdown--;
-                    countdownElement.textContent = `Redirecionando em ${state.countdown}...`;
-                    
-                    if (state.countdown <= 0) {
-                        clearInterval(state.countdownInterval);
-                        // Redirect automatically after 3 seconds
-                        window.open(roulettesData[id-1].link, '_blank');
-                        
-                        // Add to notifications
-                        addWinnerNotification(roulettesData[id-1].title);
-                        
-                        // Schedule reset after 10 seconds
-                        state.resetTimeout = setTimeout(() => {
-                            resetRoulette(id);
-                        }, 10000); // 10 segundos
-                    }
-                }, 1000);
-            }, 3000);
-        }
-        
-        // Reset roulette after win
-        function resetRoulette(id) {
-            const state = rouletteStates[id];
-            const spinBtn = document.getElementById(`spin-${id}`);
-            const attemptsElement = document.getElementById(`attempts-${id}`);
-            const countdownElement = document.getElementById(`countdown-${id}`);
-            
-            console.log("Resetando roleta", id, "após 10 segundos");
-            
-            // Clear any existing timeout
-            if (state.resetTimeout) {
-                clearTimeout(state.resetTimeout);
-                state.resetTimeout = null;
-            }
-            
-            // Reset state
-            state.isBlocked = false;
-            state.attempts = 3;
-            state.hasWon = false;
-            
-            // Clear any countdown interval
-            if (state.countdownInterval) {
-                clearInterval(state.countdownInterval);
-                countdownElement.style.display = 'none';
-            }
-            
-            // Reset UI
-            spinBtn.disabled = false;
-            spinBtn.textContent = "GIRAR ROLETA";
-            spinBtn.style.background = "linear-gradient(to right, #2ecc71, #27ae60)";
-            attemptsElement.textContent = `Tentativas restantes: 3`;
         }
         
         // Create confetti animation
@@ -1656,43 +1746,6 @@
                     }
                 }, (duration + delay) * 1000);
             }
-        }
-        
-        // Start roulette timer
-        function startRouletteTimer(id) {
-            const state = rouletteStates[id];
-            const timerElement = document.getElementById(`timer-${id}`);
-            const spinBtn = document.getElementById(`spin-${id}`);
-            const attemptsElement = document.getElementById(`attempts-${id}`);
-            const countdownElement = document.getElementById(`countdown-${id}`);
-            
-            timerElement.style.display = "block";
-            
-            const timerInterval = setInterval(() => {
-                state.blockTime--;
-                timerElement.textContent = `Aguarde: ${state.blockTime}s`;
-                
-                if (state.blockTime <= 0) {
-                    clearInterval(timerInterval);
-                    timerElement.style.display = "none";
-                    
-                    // Reset roulette state but KEEP THE CURRENT ROTATION
-                    state.isBlocked = false;
-                    state.attempts = 3;
-                    state.hasWon = false;
-                    
-                    // Clear any countdown interval
-                    if (state.countdownInterval) {
-                        clearInterval(state.countdownInterval);
-                        countdownElement.style.display = 'none';
-                    }
-                    
-                    spinBtn.disabled = false;
-                    spinBtn.textContent = "GIRAR ROLETA";
-                    spinBtn.style.background = "linear-gradient(to right, #2ecc71, #27ae60)";
-                    attemptsElement.textContent = `Tentativas restantes: 3`;
-                }
-            }, 1000);
         }
         
         // Create comments
