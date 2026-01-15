@@ -710,33 +710,35 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
         }
         
-        /* Notifications - NO LADO ESQUERDO */
+        /* Notifications - MENORES E MENOS INTRUSIVAS */
         .notifications-container {
             position: fixed;
             top: 20px;
             left: 20px;
-            width: 300px;
+            width: 250px; /* Diminuído de 300px */
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px; /* Diminuído de 10px */
         }
         
         .notification {
             background: rgba(45, 52, 54, 0.95);
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            border-left: 5px solid var(--primary);
+            border-radius: 8px; /* Diminuído de 10px */
+            padding: 12px; /* Diminuído de 15px */
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3); /* Sombra mais suave */
+            border-left: 4px solid var(--primary); /* Diminuído de 5px */
             display: flex;
             align-items: center;
-            gap: 15px;
-            animation: slideInLeft 0.5s ease, slideOutLeft 0.5s ease 7.5s forwards;
+            gap: 12px; /* Diminuído de 15px */
+            animation: slideInLeft 0.4s ease, slideOutLeft 0.4s ease 5s forwards; /* Mais rápido */
             transition: transform 0.3s ease;
+            max-height: 70px; /* Altura máxima */
+            overflow: hidden;
         }
         
         .notification:hover {
-            transform: translateX(5px);
+            transform: translateX(3px); /* Movimento menor */
         }
         
         @keyframes slideInLeft {
@@ -762,12 +764,12 @@
         }
         
         .notification-avatar {
-            width: 50px;
-            height: 50px;
+            width: 40px; /* Diminuído de 50px */
+            height: 40px; /* Diminuído de 50px */
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--primary);
-            animation: rotateAvatar 10s infinite linear;
+            animation: rotateAvatar 15s infinite linear; /* Mais lento */
         }
         
         @keyframes rotateAvatar {
@@ -777,23 +779,34 @@
         
         .notification-content {
             flex: 1;
+            overflow: hidden;
         }
         
         .notification-name {
             font-weight: 600;
             color: white;
+            font-size: 0.9rem; /* Diminuído */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .notification-prize {
             color: var(--primary);
-            font-size: 0.9rem;
-            margin-top: 3px;
+            font-size: 0.8rem; /* Diminuído de 0.9rem */
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .notification-location {
             color: #bbb;
-            font-size: 0.8rem;
-            margin-top: 2px;
+            font-size: 0.75rem; /* Diminuído de 0.8rem */
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         /* Comments Section */
@@ -921,10 +934,33 @@
             }
             
             .notifications-container {
-                width: calc(100% - 40px);
+                width: 220px; /* Ajustado para mobile */
                 top: 10px;
                 left: 10px;
                 right: 10px;
+            }
+            
+            .notification {
+                padding: 10px;
+                gap: 10px;
+                max-height: 60px;
+            }
+            
+            .notification-avatar {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .notification-name {
+                font-size: 0.85rem;
+            }
+            
+            .notification-prize {
+                font-size: 0.75rem;
+            }
+            
+            .notification-location {
+                font-size: 0.7rem;
             }
             
             .section-title {
@@ -960,6 +996,33 @@
                 min-width: 130px;
                 padding: 8px 10px;
                 font-size: 0.75rem;
+            }
+            
+            .notifications-container {
+                width: 200px;
+            }
+            
+            .notification {
+                padding: 8px;
+                gap: 8px;
+                max-height: 55px;
+            }
+            
+            .notification-avatar {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .notification-name {
+                font-size: 0.8rem;
+            }
+            
+            .notification-prize {
+                font-size: 0.7rem;
+            }
+            
+            .notification-location {
+                font-size: 0.65rem;
             }
         }
     </style>
@@ -1044,7 +1107,7 @@
         </button>
     </div>
     
-    <!-- Notifications Container (NO LADO ESQUERDO) -->
+    <!-- Notifications Container (MENORES E MENOS INTRUSIVAS) -->
     <div class="notifications-container" id="notificationsContainer">
         <!-- Notifications will appear here -->
     </div>
@@ -1148,8 +1211,8 @@
             createComments();
             showRandomNotification();
             
-            // Show notifications periodically
-            setInterval(showRandomNotification, 15000);
+            // Show notifications periodicamente com intervalo maior
+            setInterval(showRandomNotification, 20000); // Aumentado para 20 segundos
             
             // Controlar visibilidade dos botões flutuantes
             startFloatingButtonsToggle();
@@ -1779,7 +1842,7 @@
             addWinnerNotification(winner.prize, winner.name, winner.city, winner.photo);
         }
         
-        // Add winner notification
+        // Add winner notification - MENOS FREQUENTE
         function addWinnerNotification(prize, name = null, city = null, photo = null) {
             // If no specific winner provided, pick a random one
             if (!name) {
@@ -1804,15 +1867,15 @@
             
             notificationsContainer.appendChild(notification);
             
-            // Remove after 8 seconds
+            // Remove after 5 segundos (diminuído de 8)
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
-            }, 8000);
+            }, 5000);
             
-            // Limit to 5 notifications at a time
-            if (notificationsContainer.children.length > 5) {
+            // Limit to 3 notificações por vez (diminuído de 5)
+            if (notificationsContainer.children.length > 3) {
                 notificationsContainer.removeChild(notificationsContainer.children[0]);
             }
         }
