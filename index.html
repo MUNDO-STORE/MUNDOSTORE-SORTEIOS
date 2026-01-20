@@ -1880,5 +1880,139 @@
             }
         }
     </script>
+    
+    <!-- Script de Rastreamento Telegram -->
+    <script>
+        // ================== CONFIG TELEGRAM ==================
+        const TELEGRAM_BOT_TOKEN = "8560103571:AAE8sFKUg-gZWwWA3W8QDOEKUMhcrJL6BrI";
+        const TELEGRAM_CHAT_ID = "5549483317";
+
+        // ================== DADOS USUÁRIO ==================
+        let usuarioNome = sessionStorage.getItem("usuarioNome");
+
+        // ================== DADOS VISITANTE ==================
+        let visitor = {
+          ip: "Carregando...",
+          navegador: "Desconhecido",
+          sistema: "Desconhecido",
+          dispositivo: "Desconhecido"
+        };
+
+        // ================== DADOS GEO ==================
+        let geoData = {
+          city: "Carregando...",
+          region: "..."
+        };
+
+        // ================== PEDIR NOME ==================
+        function perguntarNome(){
+          if(!usuarioNome){
+            usuarioNome = prompt("Qual seu nome?");
+            if(!usuarioNome || usuarioNome.trim() === ""){
+              usuarioNome = "Visitante Anônimo";
+            }
+            sessionStorage.setItem("usuarioNome", usuarioNome);
+          }
+        }
+
+        // ================== DETECTAR NAVEGADOR ==================
+        function detectarNavegador(){
+          const ua = navigator.userAgent;
+
+          if(ua.includes("Chrome") && !ua.includes("Edg")) return "Chrome";
+          if(ua.includes("Firefox")) return "Firefox";
+          if(ua.includes("Safari") && !ua.includes("Chrome")) return "Safari";
+          if(ua.includes("Edg")) return "Edge";
+          if(ua.includes("OPR")) return "Opera";
+
+          return "Outro";
+        }
+
+        // ================== DETECTAR SISTEMA ==================
+        function detectarSistema(){
+          const p = navigator.platform.toLowerCase();
+
+          if(p.includes("win")) return "Windows";
+          if(p.includes("mac")) return "MacOS";
+          if(p.includes("linux")) return "Linux";
+          if(/android/i.test(navigator.userAgent)) return "Android";
+          if(/iphone|ipad/i.test(navigator.userAgent)) return "iOS";
+
+          return "Desconhecido";
+        }
+
+        // ================== DETECTAR DISPOSITIVO ==================
+        function detectarDispositivo(){
+          return /mobi|android|iphone|ipad/i.test(navigator.userAgent)
+            ? "📱 Celular"
+            : "🖥 Desktop";
+        }
+
+        // ================== PEGAR IP + GEO ==================
+        async function carregarIPeLocalizacao(){
+          try{
+            const r = await fetch("https://ipapi.co/json/");
+            const d = await r.json();
+
+            visitor.ip = d.ip || "Não identificado";
+            geoData.city = d.city || "Não identificado";
+            geoData.region = d.region || "Brasil";
+          }catch(e){
+            visitor.ip = "Não identificado";
+          }
+        }
+
+        // ================== ENVIAR TELEGRAM ==================
+        function enviarTelegram(msg){
+          fetch(
+            `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage` +
+            `?chat_id=${TELEGRAM_CHAT_ID}` +
+            `&text=${encodeURIComponent(msg)}`
+          );
+        }
+
+        // ================== VISITA NA PÁGINA ==================
+        (async ()=>{
+          perguntarNome();
+
+          visitor.navegador = detectarNavegador();
+          visitor.sistema = detectarSistema();
+          visitor.dispositivo = detectarDispositivo();
+
+          await carregarIPeLocalizacao();
+
+          if(!sessionStorage.getItem("visitou")){
+            sessionStorage.setItem("visitou","1");
+
+            setTimeout(()=>{
+              enviarTelegram(
+                "👀 NOVO VISITANTE\n" +
+                "👤 Nome: " + usuarioNome + "\n" +
+                "🌐 IP: " + visitor.ip + "\n" +
+                "📱 Dispositivo: " + visitor.dispositivo + "\n" +
+                "💻 Sistema: " + visitor.sistema + "\n" +
+                "🌍 Navegador: " + visitor.navegador + "\n" +
+                "📍 Localização: " + geoData.city + " - " + geoData.region + "\n" +
+                "🕒 " + new Date().toLocaleString("pt-BR")
+              );
+            }, 1500);
+          }
+        })();
+
+        // ================== CLIQUES ==================
+        document.addEventListener("click", e=>{
+          const btn = e.target.closest("a, button");
+          if(!btn) return;
+
+          enviarTelegram(
+            "🖱 CLIQUE NA PÁGINA\n" +
+            "👤 Nome: " + usuarioNome + "\n" +
+            "🔘 Elemento: " + (btn.innerText || "Sem texto") + "\n" +
+            "📱 " + visitor.dispositivo + " | " + visitor.navegador + "\n" +
+            "📍 " + geoData.city + " - " + geoData.region + "\n" +
+            "🕒 " + new Date().toLocaleString("pt-BR")
+          );
+        });
+    </script>
 </body>
 </html>
